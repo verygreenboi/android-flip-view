@@ -32,7 +32,6 @@ public class FlipView extends RecyclerView implements FlipLayoutManager.OnPositi
     private final Paint mShadePaint = new Paint();
     private final Paint mShinePaint = new Paint();
 
-    private SnapScrollListener mSnapScrollListener;
     private List<OnPositionChangeListener> mPositionChangeListeners;
 
     private AdapterDataObserver mObserver = new AdapterDataObserver();
@@ -116,8 +115,6 @@ public class FlipView extends RecyclerView implements FlipLayoutManager.OnPositi
     }
 
     public void setLayoutManager(FlipLayoutManager layoutManager) {
-        mSnapScrollListener = new SnapScrollListener(layoutManager);
-
         layoutManager.setPositionChangeListener(this);
 
         super.setLayoutManager(layoutManager);
@@ -147,9 +144,7 @@ public class FlipView extends RecyclerView implements FlipLayoutManager.OnPositi
 
         final boolean isVerticalScrolling = layoutManager.getOrientation() == FlipLayoutManager.VERTICAL;
         final int angle = layoutManager.getAngle();
-        final int previousPosition = layoutManager.getPreviousPosition();
         final int currentPosition = layoutManager.getCurrentPosition();
-        final int nextPosition = layoutManager.getNextPosition();
 
         View previousView = null;
         View currentView = null;
@@ -158,7 +153,7 @@ public class FlipView extends RecyclerView implements FlipLayoutManager.OnPositi
         for (int i = 0; i < viewCount; i++) {
             View view = getChildAt(i);
             int position = getChildAdapterPosition(view);
-            if (position == previousPosition) {
+            if (position == currentPosition - 1) {
                 previousView = view;
                 continue;
             }
@@ -168,7 +163,7 @@ public class FlipView extends RecyclerView implements FlipLayoutManager.OnPositi
                 continue;
             }
 
-            if (position == nextPosition) {
+            if (position == currentPosition + 1) {
                 nextView = view;
             }
         }
@@ -283,7 +278,15 @@ public class FlipView extends RecyclerView implements FlipLayoutManager.OnPositi
     public void onScrollStateChanged(int state) {
         super.onScrollStateChanged(state);
 
-        mSnapScrollListener.onScrollStateChanged(this, state);
+        if (state != RecyclerView.SCROLL_STATE_IDLE) {
+            return;
+        }
+
+        if (!getLayoutManager().requiresSettling()) {
+            return;
+        }
+
+        smoothScrollToPosition(getLayoutManager().getCurrentPosition());
     }
 
     public void addOnPositionChangeListener(OnPositionChangeListener listener) {
@@ -365,8 +368,6 @@ public class FlipView extends RecyclerView implements FlipLayoutManager.OnPositi
                 return;
             }
 
-            layoutManager.setPositionForNextLayout(NO_POSITION);
-
             if (adapter == null || !adapter.hasStableIds()) {
                 return;
             }
@@ -385,7 +386,7 @@ public class FlipView extends RecyclerView implements FlipLayoutManager.OnPositi
                         continue;
                     }
 
-                    layoutManager.setPositionForNextLayout(i);
+                    layoutManager.setCurrentPosition(i, true);
                     return;
                 }
             }
