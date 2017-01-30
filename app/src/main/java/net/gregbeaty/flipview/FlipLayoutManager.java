@@ -147,8 +147,6 @@ public class FlipLayoutManager extends LinearLayoutManager {
                 setCurrentPosition(position);
                 return;
             }
-
-            mPositionForNextLayout = RecyclerView.NO_POSITION;
         }
 
         if (mCurrentPosition >= state.getItemCount()) {
@@ -168,33 +166,22 @@ public class FlipLayoutManager extends LinearLayoutManager {
     private void fill(RecyclerView.Recycler recycler, RecyclerView.State state) {
         detachAndScrapAttachedViews(recycler);
 
-        SparseArray<View> viewCache = new SparseArray<>(getChildCount());
-
-        for (int i = 0; i < getChildCount(); i++) {
-            final View child = getChildAt(i);
-            int position = getPosition(child);
-            viewCache.put(position, child);
-            detachView(child);
-        }
-
         boolean layoutOnlyCurrentPosition = !isScrolling() && !requiresSettling();
 
         if (!layoutOnlyCurrentPosition) {
-            addView(getPreviousPosition(), viewCache, recycler, state);
+            addView(getPreviousPosition(), recycler, state);
         }
 
-        addView(getCurrentPosition(), viewCache, recycler, state);
+        addView(getCurrentPosition(), recycler, state);
 
         if (!layoutOnlyCurrentPosition) {
-            addView(getNextPosition(), viewCache, recycler, state);
+            addView(getNextPosition(), recycler, state);
         }
 
-        for (int i = 0; i < viewCache.size(); i++) {
-            recycler.recycleView(viewCache.valueAt(i));
-        }
+        recycler.clear();
     }
 
-    private void addView(int position, SparseArray<View> viewCache, RecyclerView.Recycler recycler, RecyclerView.State state) {
+    private void addView(int position, RecyclerView.Recycler recycler, RecyclerView.State state) {
         if (position == RecyclerView.NO_POSITION) {
             return;
         }
@@ -203,16 +190,10 @@ public class FlipLayoutManager extends LinearLayoutManager {
             return;
         }
 
-        View view = viewCache.get(position);
-        if (view == null) {
-            view = recycler.getViewForPosition(position);
-            addView(view);
-            measureChildWithMargins(view, 0, 0);
-            layoutDecorated(view, 0, 0, mDecoratedChildWidth, mDecoratedChildHeight);
-        } else {
-            attachView(view);
-            viewCache.remove(position);
-        }
+        View view = recycler.getViewForPosition(position);
+        addView(view);
+        measureChildWithMargins(view, 0, 0);
+        layoutDecorated(view, 0, 0, mDecoratedChildWidth, mDecoratedChildHeight);
     }
 
     public int getAngle() {
