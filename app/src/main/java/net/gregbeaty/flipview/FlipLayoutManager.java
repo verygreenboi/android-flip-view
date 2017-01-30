@@ -60,7 +60,7 @@ public class FlipLayoutManager extends LinearLayoutManager {
     }
 
     private int scroll(int delta, RecyclerView.Recycler recycler, RecyclerView.State state) {
-        if (getChildCount() == 0) {
+        if (state.getItemCount() == 0) {
             return 0;
         }
 
@@ -129,6 +129,7 @@ public class FlipLayoutManager extends LinearLayoutManager {
         }
 
         if (state.getItemCount() == 0) {
+            removeAndRecycleAllViews(recycler);
             return;
         }
 
@@ -167,17 +168,13 @@ public class FlipLayoutManager extends LinearLayoutManager {
     }
 
     private void fill(RecyclerView.Recycler recycler, RecyclerView.State state) {
-        int viewCount = getChildCount();
-        SparseArray<View> viewCache = new SparseArray<>(viewCount);
+        SparseArray<View> viewCache = new SparseArray<>(getChildCount());
 
-        for (int i = 0; i < viewCount; i++) {
+        for (int i = 0; i < getChildCount(); i++) {
             final View child = getChildAt(i);
             int position = getPosition(child);
             viewCache.put(position, child);
-        }
-
-        for (int i = 0; i < viewCache.size(); i++) {
-            detachView(viewCache.valueAt(i));
+            detachView(child);
         }
 
         boolean layoutOnlyCurrentPosition = !isScrolling() && !requiresSettling();
@@ -186,15 +183,14 @@ public class FlipLayoutManager extends LinearLayoutManager {
             addView(getPreviousPosition(), viewCache, recycler, state);
         }
 
-        addView(getCurrentPosition(), viewCache, recycler, state);
-
         if (!layoutOnlyCurrentPosition) {
             addView(getNextPosition(), viewCache, recycler, state);
         }
 
+        addView(getCurrentPosition(), viewCache, recycler, state);
+
         for (int i = 0; i < viewCache.size(); i++) {
-            final View removingView = viewCache.valueAt(i);
-            recycler.recycleView(removingView);
+            recycler.recycleView(viewCache.valueAt(i));
         }
     }
 

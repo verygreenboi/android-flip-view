@@ -157,18 +157,18 @@ public class FlipView extends RecyclerView implements FlipLayoutManager.OnPositi
 
         for (int i = 0; i < viewCount; i++) {
             View view = getChildAt(i);
-            int viewAdapterPosition = getChildAdapterPosition(view);
-            if (viewAdapterPosition == previousPosition) {
+            int position = getChildAdapterPosition(view);
+            if (position == previousPosition) {
                 previousView = view;
                 continue;
             }
 
-            if (viewAdapterPosition == currentPosition) {
+            if (position == currentPosition) {
                 currentView = view;
                 continue;
             }
 
-            if (viewAdapterPosition == nextPosition) {
+            if (position == nextPosition) {
                 nextView = view;
             }
         }
