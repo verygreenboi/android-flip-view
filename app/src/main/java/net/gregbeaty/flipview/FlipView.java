@@ -173,6 +173,7 @@ public class FlipView extends RecyclerView implements FlipLayoutManager.OnPositi
         }
 
         if (!layoutManager.isScrolling() && !layoutManager.requiresSettling()) {
+            bringChildToFront(currentView);
             drawChild(canvas, currentView, 0);
             return;
         }
