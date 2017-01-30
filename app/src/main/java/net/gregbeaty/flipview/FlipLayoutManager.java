@@ -305,15 +305,15 @@ public class FlipLayoutManager extends LinearLayoutManager {
         mPositionChangeListener = onPositionChangeListener;
     }
 
-    boolean isScrolling() {
+    public boolean isScrolling() {
         return getScrollState() != RecyclerView.SCROLL_STATE_IDLE;
     }
 
-    private boolean isInteractiveScroll() {
+    public boolean isInteractiveScroll() {
         return getScrollState() == RecyclerView.SCROLL_STATE_DRAGGING;
     }
 
-    boolean requiresSettling() {
+    public boolean requiresSettling() {
         return getScrollDistance() % DISTANCE_PER_POSITION != 0;
     }
 
