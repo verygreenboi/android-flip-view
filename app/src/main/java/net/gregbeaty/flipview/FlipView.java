@@ -178,7 +178,6 @@ public class FlipView extends RecyclerView implements FlipLayoutManager.OnPositi
         }
 
         if (!layoutManager.isScrolling() && !layoutManager.requiresSettling()) {
-            setDrawWithLayer(currentView, false);
             drawChild(canvas, currentView, 0);
             return;
         }
@@ -188,7 +187,6 @@ public class FlipView extends RecyclerView implements FlipLayoutManager.OnPositi
         canvas.clipRect(isVerticalScrolling ? mTopClippingRect : mLeftClippingRect);
         final View previousHalf = angle >= 90 ? previousView : currentView;
         if (previousHalf != null) {
-            setDrawWithLayer(previousHalf, true);
             drawChild(canvas, previousHalf, 0);
         }
 
@@ -206,7 +204,6 @@ public class FlipView extends RecyclerView implements FlipLayoutManager.OnPositi
         final View nextHalf = angle >= 90 ? currentView : nextView;
 
         if (nextHalf != null) {
-            setDrawWithLayer(nextHalf, true);
             drawChild(canvas, nextHalf, 0);
         }
 
@@ -247,7 +244,6 @@ public class FlipView extends RecyclerView implements FlipLayoutManager.OnPositi
 
         canvas.concat(mMatrix);
 
-        setDrawWithLayer(currentView, true);
         drawChild(canvas, currentView, 0);
 
         if (angle < 90) {
@@ -262,18 +258,6 @@ public class FlipView extends RecyclerView implements FlipLayoutManager.OnPositi
 
         mCamera.restore();
         canvas.restore();
-    }
-
-    private void setDrawWithLayer(View view, boolean drawWithLayer) {
-        if (!isHardwareAccelerated()) {
-            return;
-        }
-
-        if (view.getLayerType() != LAYER_TYPE_HARDWARE && drawWithLayer) {
-            view.setLayerType(LAYER_TYPE_HARDWARE, null);
-        } else if (view.getLayerType() != LAYER_TYPE_NONE && !drawWithLayer) {
-            view.setLayerType(LAYER_TYPE_NONE, null);
-        }
     }
 
     @Override

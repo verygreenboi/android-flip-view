@@ -130,6 +130,7 @@ public class FlipLayoutManager extends LinearLayoutManager {
 
         if (state.getItemCount() == 0) {
             removeAndRecycleAllViews(recycler);
+            setCurrentPosition(RecyclerView.NO_POSITION);
             return;
         }
 
@@ -161,13 +162,12 @@ public class FlipLayoutManager extends LinearLayoutManager {
 
         mDecoratedChildWidth = getDecoratedMeasuredWidth(scrap);
         mDecoratedChildHeight = getDecoratedMeasuredHeight(scrap);
-        detachAndScrapView(scrap, recycler);
-
-        detachAndScrapAttachedViews(recycler);
         fill(recycler, state);
     }
 
     private void fill(RecyclerView.Recycler recycler, RecyclerView.State state) {
+        detachAndScrapAttachedViews(recycler);
+
         SparseArray<View> viewCache = new SparseArray<>(getChildCount());
 
         for (int i = 0; i < getChildCount(); i++) {
@@ -250,6 +250,10 @@ public class FlipLayoutManager extends LinearLayoutManager {
     }
 
     private void setCurrentPosition(int position) {
+        if (position == mCurrentPosition) {
+            return;
+        }
+
         int oldPosition = mCurrentPosition;
         mCurrentPosition = position;
         mScrollDistance = position * DISTANCE_PER_POSITION;
