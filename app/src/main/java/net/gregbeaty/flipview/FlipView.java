@@ -178,14 +178,18 @@ public class FlipView extends RecyclerView implements FlipLayoutManager.OnPositi
         }
 
         currentView.setVisibility(VISIBLE);
+        currentView.setClickable(false);
+        currentView.requestFocus();
 
         if (!layoutManager.isScrolling() && !layoutManager.requiresSettling()) {
             if (previousView != null) {
                 previousView.setVisibility(GONE);
+                previousView.setClickable(false);
             }
 
             if (nextView != null) {
                 nextView.setVisibility(GONE);
+                nextView.setClickable(false);
             }
 
             setDrawWithLayer(currentView, false);

@@ -181,8 +181,8 @@ public class FlipLayoutManager extends LinearLayoutManager {
         }
 
         addView(getPreviousPosition(), viewCache, recycler, state);
-        addView(getCurrentPosition(), viewCache, recycler, state);
         addView(getNextPosition(), viewCache, recycler, state);
+        addView(getCurrentPosition(), viewCache, recycler, state);
 
         for (int i = 0; i < viewCache.size(); i++) {
             final View removingView = viewCache.valueAt(i);
@@ -325,7 +325,7 @@ public class FlipLayoutManager extends LinearLayoutManager {
         mPositionForNextLayout = positionForNextLayout;
     }
 
-    void notifyOfPositionChange(int oldPosition, int newPosition) {
+    private void notifyOfPositionChange(int oldPosition, int newPosition) {
         if (oldPosition != newPosition && mPositionChangeListener != null) {
             mPositionChangeListener.onPositionChange(this, newPosition);
         }
