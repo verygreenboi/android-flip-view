@@ -181,8 +181,8 @@ public class FlipLayoutManager extends LinearLayoutManager {
         }
 
         addView(getPreviousPosition(), viewCache, recycler, state);
-        addView(getNextPosition(), viewCache, recycler, state);
         addView(getCurrentPosition(), viewCache, recycler, state);
+        addView(getNextPosition(), viewCache, recycler, state);
 
         for (int i = 0; i < viewCache.size(); i++) {
             final View removingView = viewCache.valueAt(i);
