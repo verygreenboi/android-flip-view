@@ -183,11 +183,11 @@ public class FlipLayoutManager extends LinearLayoutManager {
             addView(getPreviousPosition(), viewCache, recycler, state);
         }
 
+        addView(getCurrentPosition(), viewCache, recycler, state);
+
         if (!layoutOnlyCurrentPosition) {
             addView(getNextPosition(), viewCache, recycler, state);
         }
-
-        addView(getCurrentPosition(), viewCache, recycler, state);
 
         for (int i = 0; i < viewCache.size(); i++) {
             recycler.recycleView(viewCache.valueAt(i));
