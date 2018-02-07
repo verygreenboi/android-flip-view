@@ -25,10 +25,10 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
-        mPosition = (TextView) findViewById(R.id.main_position);
-        mTotalItems = (TextView) findViewById(R.id.main_total_items);
-        mDistanceText = (TextView) findViewById(R.id.main_flip_distance);
-        mAngleText = (TextView) findViewById(R.id.main_flip_angle);
+        mPosition = findViewById(R.id.main_position);
+        mTotalItems = findViewById(R.id.main_total_items);
+        mDistanceText = findViewById(R.id.main_flip_distance);
+        mAngleText = findViewById(R.id.main_flip_angle);
 
         mAdapter = new SampleAdapter();
 
@@ -36,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
             mAdapter.addItem();
         }
 
-        mView = (FlipView) findViewById(R.id.main_flip_view);
+        mView = findViewById(R.id.main_flip_view);
         mView.setOrientation(FlipView.VERTICAL);
 
         mView.addOnPositionChangeListener(new FlipView.OnPositionChangeListener() {
