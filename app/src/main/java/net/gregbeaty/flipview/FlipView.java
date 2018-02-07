@@ -316,7 +316,7 @@ public class FlipView extends RecyclerView implements OnPositionChangeListener {
     }
 
     public int getScrollDistance() {
-        return getLayoutManagerInternal().getCurrentPosition();
+        return getLayoutManagerInternal().getScrollDistance();
     }
 
     public int getAngle() {
