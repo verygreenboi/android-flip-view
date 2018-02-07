@@ -1,5 +1,6 @@
 package net.gregbeaty.flipview;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Camera;
 import android.graphics.Canvas;
@@ -101,13 +102,14 @@ public class FlipView extends RecyclerView implements OnPositionChangeListener {
         super.onLayout(changed, l, t, r, b);
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouchEvent(MotionEvent e) {
         if (getLayoutManager() == null) {
             return super.onTouchEvent(e);
         }
 
-        return getLayoutManagerInternal().getScrollState() != RecyclerView.SCROLL_STATE_SETTLING && super.onTouchEvent(e);
+        return getScrollState() != RecyclerView.SCROLL_STATE_SETTLING && super.onTouchEvent(e);
     }
 
     /**

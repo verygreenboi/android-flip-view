@@ -2,7 +2,6 @@ package net.gregbeaty.flipview;
 
 import android.graphics.PointF;
 import android.support.annotation.Nullable;
-import android.support.v7.widget.OrientationHelper;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.view.ViewGroup;
@@ -370,19 +369,15 @@ class FlipLayoutManager extends RecyclerView.LayoutManager {
     }
 
     public boolean isScrolling() {
-        return getScrollState() != RecyclerView.SCROLL_STATE_IDLE;
+        return mScrollState != RecyclerView.SCROLL_STATE_IDLE;
     }
 
     public boolean isInteractiveScroll() {
-        return getScrollState() == RecyclerView.SCROLL_STATE_DRAGGING;
+        return mScrollState == RecyclerView.SCROLL_STATE_DRAGGING;
     }
 
     public boolean requiresSettling() {
         return getScrollDistance() % FlipView.DISTANCE_PER_POSITION != 0;
-    }
-
-    int getScrollState() {
-        return mScrollState;
     }
 
     private void notifyOfPositionChange(int oldPosition, int newPosition) {
