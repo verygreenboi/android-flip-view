@@ -42,7 +42,7 @@ abstract class FlipSmoothScroller extends LinearSmoothScroller {
 
     private int calculateDeltaToMakeVisible(FlipLayoutManager layoutManager, View view) {
         int scrollDistance = layoutManager.getScrollDistance();
-        int distanceForPage = layoutManager.getPosition(view) * FlipLayoutManager.DISTANCE_PER_POSITION;
+        int distanceForPage = layoutManager.getPosition(view) * FlipView.DISTANCE_PER_POSITION;
         return scrollDistance - distanceForPage;
     }
 
