@@ -16,8 +16,8 @@ class FlipLayoutManager extends RecyclerView.LayoutManager {
     private int mPositionBeforeScroll = RecyclerView.NO_POSITION;
     private int mOrientation = FlipView.VERTICAL;
     private int mScrollVector;
-    private long mCurrentId;
-    private int mCurrentPosition;
+    private long mCurrentId = RecyclerView.NO_ID;
+    private int mCurrentPosition = RecyclerView.NO_POSITION;
     private int mScrollDistance;
     private RecyclerView.Adapter mAdapter;
     private OnPositionChangeListener mPositionChangeListener;
@@ -202,15 +202,6 @@ class FlipLayoutManager extends RecyclerView.LayoutManager {
             mDecoratedChildWidth = getDecoratedMeasuredWidth(scrap);
             mDecoratedChildHeight = getDecoratedMeasuredHeight(scrap);
             detachAndScrapView(scrap, recycler);
-        }
-
-        if (mAdapter != null && mCurrentId >= RecyclerView.NO_ID && mAdapter.getItemId(mCurrentPosition) != mCurrentId) {
-            for (int i = 0; i < mAdapter.getItemCount(); i++) {
-                long itemId = mAdapter.getItemId(i);
-                if (itemId == mCurrentId) {
-                    setCurrentPosition(i, false);
-                }
-            }
         }
 
         if (mCurrentPosition <= RecyclerView.NO_POSITION) {
