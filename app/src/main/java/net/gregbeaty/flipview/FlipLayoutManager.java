@@ -9,8 +9,6 @@ import android.view.ViewGroup;
 
 // TODO: Force all access through FlipView. Make this protected internal.
 class FlipLayoutManager extends RecyclerView.LayoutManager {
-
-    public static final int DISTANCE_PER_POSITION = 180;
     private final float INTERACTIVE_SCROLL_SPEED = 0.5f;
     private Integer mDecoratedChildWidth;
     private Integer mDecoratedChildHeight;
@@ -92,21 +90,21 @@ class FlipLayoutManager extends RecyclerView.LayoutManager {
 
         final int maxOverScrollDistance = 70;
         int minDistance = 0;
-        int maxDistance = ((getItemCount() - 1) * DISTANCE_PER_POSITION);
+        int maxDistance = ((getItemCount() - 1) * FlipView.DISTANCE_PER_POSITION);
 
         if (desiredDistance < minDistance - maxOverScrollDistance || desiredDistance > maxDistance + maxOverScrollDistance) {
             return 0;
         }
 
         if (isInteractiveScroll()) {
-            minDistance = (mPositionBeforeScroll - 1) * DISTANCE_PER_POSITION;
+            minDistance = (mPositionBeforeScroll - 1) * FlipView.DISTANCE_PER_POSITION;
             if (mScrollVector > 0) {
-                minDistance = mPositionBeforeScroll * DISTANCE_PER_POSITION;
+                minDistance = mPositionBeforeScroll * FlipView.DISTANCE_PER_POSITION;
             }
 
-            maxDistance = (mPositionBeforeScroll + 1) * DISTANCE_PER_POSITION;
+            maxDistance = (mPositionBeforeScroll + 1) * FlipView.DISTANCE_PER_POSITION;
             if (mScrollVector < 0) {
-                maxDistance = mPositionBeforeScroll * DISTANCE_PER_POSITION;
+                maxDistance = mPositionBeforeScroll * FlipView.DISTANCE_PER_POSITION;
             }
 
             if (desiredDistance < minDistance || desiredDistance > maxDistance) {
@@ -266,17 +264,17 @@ class FlipLayoutManager extends RecyclerView.LayoutManager {
     }
 
     private int getAngle(int distance) {
-        float currentDistance = distance % DISTANCE_PER_POSITION;
+        float currentDistance = distance % FlipView.DISTANCE_PER_POSITION;
 
         if (currentDistance < 0) {
-            currentDistance += DISTANCE_PER_POSITION;
+            currentDistance += FlipView.DISTANCE_PER_POSITION;
         }
 
-        return Math.round((currentDistance / DISTANCE_PER_POSITION) * DISTANCE_PER_POSITION);
+        return Math.round((currentDistance / FlipView.DISTANCE_PER_POSITION) * FlipView.DISTANCE_PER_POSITION);
     }
 
     private int findPositionByScrollDistance(float distance) {
-        return Math.round(distance / DISTANCE_PER_POSITION);
+        return Math.round(distance / FlipView.DISTANCE_PER_POSITION);
     }
 
     public int getCurrentPosition() {
@@ -299,7 +297,7 @@ class FlipLayoutManager extends RecyclerView.LayoutManager {
         if (mScrollDistance < 0) {
             mScrollDistance = 0;
         } else {
-            mScrollDistance = DISTANCE_PER_POSITION * position;
+            mScrollDistance = FlipView.DISTANCE_PER_POSITION * position;
         }
 
         if (requestLayout) {
@@ -389,7 +387,7 @@ class FlipLayoutManager extends RecyclerView.LayoutManager {
     }
 
     public boolean requiresSettling() {
-        return getScrollDistance() % DISTANCE_PER_POSITION != 0;
+        return getScrollDistance() % FlipView.DISTANCE_PER_POSITION != 0;
     }
 
     int getScrollState() {

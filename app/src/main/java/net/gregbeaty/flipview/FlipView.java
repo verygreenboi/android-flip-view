@@ -19,6 +19,7 @@ import java.util.List;
 public class FlipView extends RecyclerView implements OnPositionChangeListener {
     public static final int HORIZONTAL = OrientationHelper.HORIZONTAL;
     public static final int VERTICAL = OrientationHelper.VERTICAL;
+    public static final int DISTANCE_PER_POSITION = 180;
 
     private static final int MAX_SHADOW_ALPHA = 180;
     private static final int MAX_SHADE_ALPHA = 130;
