@@ -59,4 +59,10 @@ public class SampleAdapter extends RecyclerView.Adapter<SampleAdapter.ViewHolder
         mColors.add(Color.argb(255, mRandom.nextInt(256), mRandom.nextInt(256), mRandom.nextInt(256)));
         notifyItemInserted(mItems.size() - 1);
     }
+
+    public void removeItem(int position) {
+        mItems.remove(position);
+        mColors.remove(position);
+        notifyItemRemoved(position);
+    }
 }

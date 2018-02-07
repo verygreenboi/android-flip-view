@@ -4,26 +4,28 @@ import android.graphics.PointF;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.OrientationHelper;
 import android.support.v7.widget.RecyclerView;
-import android.util.SparseArray;
 import android.view.View;
 import android.view.ViewGroup;
 
-public class FlipLayoutManager extends RecyclerView.LayoutManager {
-    public static final int HORIZONTAL = OrientationHelper.HORIZONTAL;
-    public static final int VERTICAL = OrientationHelper.VERTICAL;
+// TODO: Force all access through FlipView. Make this protected internal.
+class FlipLayoutManager extends RecyclerView.LayoutManager {
+
     public static final int DISTANCE_PER_POSITION = 180;
     private final float INTERACTIVE_SCROLL_SPEED = 0.5f;
     private Integer mDecoratedChildWidth;
     private Integer mDecoratedChildHeight;
     private int mScrollState = RecyclerView.SCROLL_STATE_IDLE;
     private int mPositionBeforeScroll = RecyclerView.NO_POSITION;
-    private final int mOrientation;
+    private int mOrientation = FlipView.VERTICAL;
     private int mScrollVector;
+    private long mCurrentId;
     private int mCurrentPosition;
     private int mScrollDistance;
+    private RecyclerView.Adapter mAdapter;
     private OnPositionChangeListener mPositionChangeListener;
+    private FlipSmoothScroller mSmoothScroller;
 
-    public FlipLayoutManager(int orientation) {
+    public void setOrientation(int orientation) {
         mOrientation = orientation;
     }
 
@@ -39,12 +41,12 @@ public class FlipLayoutManager extends RecyclerView.LayoutManager {
 
     @Override
     public boolean canScrollHorizontally() {
-        return mOrientation == HORIZONTAL;
+        return mOrientation == FlipView.HORIZONTAL;
     }
 
     @Override
     public boolean canScrollVertically() {
-        return mOrientation == VERTICAL;
+        return mOrientation == FlipView.VERTICAL;
     }
 
     @Override
@@ -116,6 +118,7 @@ public class FlipLayoutManager extends RecyclerView.LayoutManager {
 
         int oldPosition = mCurrentPosition;
         mCurrentPosition = desiredPosition;
+        setCurrentId(mCurrentPosition);
         notifyOfPositionChange(oldPosition, mCurrentPosition);
 
         fill(recycler, state);
@@ -132,9 +135,54 @@ public class FlipLayoutManager extends RecyclerView.LayoutManager {
 
     @Override
     public void onAdapterChanged(RecyclerView.Adapter oldAdapter, RecyclerView.Adapter newAdapter) {
-        super.onAdapterChanged(oldAdapter, newAdapter);
-
+        mAdapter = newAdapter;
         removeAllViews();
+    }
+
+    @Override
+    public void onItemsRemoved(RecyclerView recyclerView, int positionStart, int itemCount) {
+        if (mCurrentPosition >= positionStart && mCurrentPosition < positionStart + itemCount && resetPositionByItemId()) {
+            return;
+        }
+
+        for (int i = positionStart; i < positionStart + itemCount; i++) {
+            if (mCurrentPosition == i) {
+                setCurrentPosition(mCurrentPosition - 1, false);
+                break;
+            }
+        }
+    }
+
+    @Override
+    public void onItemsMoved(RecyclerView recyclerView, int from, int to, int itemCount) {
+        if (mCurrentPosition == from && resetPositionByItemId()) {
+            return;
+        }
+
+        for (int i = from; i < from + itemCount; i++) {
+            if (mCurrentPosition == i) {
+                setCurrentPosition(to + i, false);
+                break;
+            }
+        }
+    }
+
+    @Override
+    public void onItemsChanged(RecyclerView recyclerView) {
+        resetPositionByItemId();
+    }
+
+    private boolean resetPositionByItemId() {
+        if (mAdapter.hasStableIds() && mCurrentId != RecyclerView.NO_ID) {
+            for (int i = 0; i < mAdapter.getItemCount(); i++) {
+                if (mAdapter.getItemId(i) == mCurrentId) {
+                    setCurrentPosition(i, false);
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     @Override
@@ -144,30 +192,39 @@ public class FlipLayoutManager extends RecyclerView.LayoutManager {
         }
 
         if (state.getItemCount() == 0) {
-            removeAndRecycleAllViews(recycler);
+            detachAndScrapAttachedViews(recycler);
             setCurrentPosition(RecyclerView.NO_POSITION, false);
             return;
         }
 
         if (mDecoratedChildWidth == null || mDecoratedChildHeight == null) {
-            View view = recycler.getViewForPosition(0);
-            addView(view);
-            measureChildWithMargins(view, 0, 0);
-            mDecoratedChildWidth = getDecoratedMeasuredWidth(view);
-            mDecoratedChildHeight = getDecoratedMeasuredHeight(view);
-            removeAndRecycleView(view, recycler);
+            View scrap = recycler.getViewForPosition(0);
+            addView(scrap);
+            measureChildWithMargins(scrap, 0, 0);
+            mDecoratedChildWidth = getDecoratedMeasuredWidth(scrap);
+            mDecoratedChildHeight = getDecoratedMeasuredHeight(scrap);
+            detachAndScrapView(scrap, recycler);
         }
 
-        if (mCurrentPosition == RecyclerView.NO_POSITION) {
+        if (mAdapter != null && mCurrentId >= RecyclerView.NO_ID && mAdapter.getItemId(mCurrentPosition) != mCurrentId) {
+            for (int i = 0; i < mAdapter.getItemCount(); i++) {
+                long itemId = mAdapter.getItemId(i);
+                if (itemId == mCurrentId) {
+                    setCurrentPosition(i, false);
+                }
+            }
+        }
+
+        if (mCurrentPosition <= RecyclerView.NO_POSITION) {
             setCurrentPosition(0, false);
         }
 
         if (mCurrentPosition >= state.getItemCount()) {
             setCurrentPosition(state.getItemCount() - 1, false);
+            return;
         }
 
         detachAndScrapAttachedViews(recycler);
-
         fill(recycler, state);
     }
 
@@ -230,13 +287,14 @@ public class FlipLayoutManager extends RecyclerView.LayoutManager {
         return mCurrentPosition;
     }
 
-    void setCurrentPosition(int position, boolean requestLayout) {
+    private void setCurrentPosition(int position, boolean requestLayout) {
         if (position == mCurrentPosition) {
             return;
         }
 
         int oldPosition = mCurrentPosition;
         mCurrentPosition = position;
+        setCurrentId(mCurrentPosition);
 
         if (mScrollDistance < 0) {
             mScrollDistance = 0;
@@ -250,6 +308,14 @@ public class FlipLayoutManager extends RecyclerView.LayoutManager {
         }
 
         notifyOfPositionChange(oldPosition, mCurrentPosition);
+    }
+
+    private void setCurrentId(int position) {
+        if (mAdapter == null || !mAdapter.hasStableIds()) {
+            mCurrentId = RecyclerView.NO_ID;
+        } else {
+            mCurrentId = mAdapter.getItemId(position);
+        }
     }
 
     public int getScrollDistance() {
@@ -272,7 +338,7 @@ public class FlipLayoutManager extends RecyclerView.LayoutManager {
 
     @Override
     public void smoothScrollToPosition(RecyclerView recyclerView, final RecyclerView.State state, final int position) {
-        final FlipSmoothScroller smoothScroller = new FlipSmoothScroller(recyclerView.getContext()) {
+        mSmoothScroller = new FlipSmoothScroller(recyclerView) {
             @Nullable
             @Override
             public PointF computeScrollVectorForPosition(int targetPosition) {
@@ -289,7 +355,7 @@ public class FlipLayoutManager extends RecyclerView.LayoutManager {
 
                 final int firstChildPos = getPosition(getChildAt(0));
                 final int direction = targetPosition < firstChildPos ? -1 : 1;
-                if (mOrientation == HORIZONTAL) {
+                if (mOrientation == FlipView.HORIZONTAL) {
                     return new PointF(direction, 0);
                 } else {
                     return new PointF(0, direction);
@@ -297,12 +363,16 @@ public class FlipLayoutManager extends RecyclerView.LayoutManager {
             }
         };
 
-        smoothScroller.setTargetPosition(position);
-        startSmoothScroll(smoothScroller);
+        mSmoothScroller.setTargetPosition(position);
+        startSmoothScroll(mSmoothScroller);
     }
 
     @Override
     public void scrollToPosition(int position) {
+        if (mSmoothScroller != null) {
+            mSmoothScroller.stopInternal();
+        }
+
         setCurrentPosition(position, true);
     }
 

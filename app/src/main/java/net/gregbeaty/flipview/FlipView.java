@@ -7,6 +7,7 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.support.annotation.Nullable;
+import android.support.v7.widget.OrientationHelper;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -16,6 +17,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FlipView extends RecyclerView implements OnPositionChangeListener {
+    public static final int HORIZONTAL = OrientationHelper.HORIZONTAL;
+    public static final int VERTICAL = OrientationHelper.VERTICAL;
+
     private static final int MAX_SHADOW_ALPHA = 180;
     private static final int MAX_SHADE_ALPHA = 130;
     private static final int MAX_SHINE_ALPHA = 100;
@@ -32,6 +36,8 @@ public class FlipView extends RecyclerView implements OnPositionChangeListener {
     private final Paint mShadePaint = new Paint();
     private final Paint mShinePaint = new Paint();
 
+    private int mOrientation;
+
     private List<OnPositionChangeListener> mPositionChangeListeners;
 
     public FlipView(Context context) {
@@ -45,7 +51,23 @@ public class FlipView extends RecyclerView implements OnPositionChangeListener {
     public FlipView(Context context, @Nullable AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
 
+        FlipLayoutManager layoutManager = new FlipLayoutManager();
+        layoutManager.setPositionChangeListener(this);
+        super.setLayoutManager(layoutManager);
+
         setItemAnimator(new DefaultItemAnimator());
+    }
+
+    public void setOrientation(int orientation) {
+        if (mOrientation == orientation) {
+            return;
+        }
+
+        mOrientation = orientation;
+        getLayoutManagerInternal().setOrientation(orientation);
+
+        requestLayout();
+        invalidate();
     }
 
     @Override
@@ -84,11 +106,11 @@ public class FlipView extends RecyclerView implements OnPositionChangeListener {
             return super.onTouchEvent(e);
         }
 
-        return getLayoutManager().getScrollState() != RecyclerView.SCROLL_STATE_SETTLING && super.onTouchEvent(e);
+        return getLayoutManagerInternal().getScrollState() != RecyclerView.SCROLL_STATE_SETTLING && super.onTouchEvent(e);
     }
 
     /**
-     * @deprecated Use {@link #setLayoutManager(FlipLayoutManager)} instead. Only {@link FlipLayoutManager} is supported.
+     * @deprecated This view does not support customized layout managers.
      * <p>
      * {@inheritDoc}
      */
@@ -98,15 +120,8 @@ public class FlipView extends RecyclerView implements OnPositionChangeListener {
         throw new UnsupportedOperationException("This view does not support customized layout managers.");
     }
 
-    public void setLayoutManager(FlipLayoutManager layoutManager) {
-        layoutManager.setPositionChangeListener(this);
-
-        super.setLayoutManager(layoutManager);
-    }
-
-    @Override
-    public FlipLayoutManager getLayoutManager() {
-        return (FlipLayoutManager) super.getLayoutManager();
+    private FlipLayoutManager getLayoutManagerInternal() {
+        return ((FlipLayoutManager) super.getLayoutManager());
     }
 
     @Override
@@ -121,12 +136,12 @@ public class FlipView extends RecyclerView implements OnPositionChangeListener {
             return;
         }
 
-        FlipLayoutManager layoutManager = getLayoutManager();
+        FlipLayoutManager layoutManager = getLayoutManagerInternal();
         if (layoutManager == null) {
             return;
         }
 
-        final boolean isVerticalScrolling = layoutManager.getOrientation() == FlipLayoutManager.VERTICAL;
+        final boolean isVerticalScrolling = layoutManager.getOrientation() == FlipView.VERTICAL;
         final int angle = layoutManager.getAngle();
         final int currentPosition = layoutManager.getCurrentPosition();
 
@@ -137,7 +152,7 @@ public class FlipView extends RecyclerView implements OnPositionChangeListener {
         for (int i = 0; i < viewCount; i++) {
             View view = getChildAt(i);
             int position = getChildAdapterPosition(view);
-            if (position == currentPosition - 1) {
+            if (position == currentPosition - 1 && currentPosition - 1 >= 0) {
                 previousView = view;
                 continue;
             }
@@ -258,11 +273,11 @@ public class FlipView extends RecyclerView implements OnPositionChangeListener {
             return;
         }
 
-        if (!getLayoutManager().requiresSettling()) {
+        if (!getLayoutManagerInternal().requiresSettling()) {
             return;
         }
 
-        smoothScrollToPosition(getLayoutManager().getCurrentPosition());
+        smoothScrollToPosition(getLayoutManagerInternal().getCurrentPosition());
     }
 
     public void addOnPositionChangeListener(OnPositionChangeListener listener) {
@@ -287,6 +302,26 @@ public class FlipView extends RecyclerView implements OnPositionChangeListener {
         }
 
         mPositionChangeListeners.clear();
+    }
+
+    public int getItemCount() {
+        return getLayoutManagerInternal().getItemCount();
+    }
+
+    public int getCurrentPosition() {
+        return getLayoutManagerInternal().getCurrentPosition();
+    }
+
+    public int getScrollDistance() {
+        return getLayoutManagerInternal().getCurrentPosition();
+    }
+
+    public int getAngle() {
+        return getLayoutManagerInternal().getAngle();
+    }
+
+    public boolean isScrolling() {
+        return getLayoutManagerInternal().isScrolling();
     }
 
     public interface OnPositionChangeListener {

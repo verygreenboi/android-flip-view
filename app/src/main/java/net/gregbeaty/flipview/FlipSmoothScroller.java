@@ -1,13 +1,23 @@
 package net.gregbeaty.flipview;
 
-import android.content.Context;
 import android.support.v7.widget.LinearSmoothScroller;
+import android.support.v7.widget.RecyclerView;
 import android.util.DisplayMetrics;
 import android.view.View;
 
 abstract class FlipSmoothScroller extends LinearSmoothScroller {
-    FlipSmoothScroller(Context context) {
-        super(context);
+    private RecyclerView mRecyclerView;
+
+    FlipSmoothScroller(RecyclerView recyclerView) {
+        super(recyclerView.getContext());
+
+        mRecyclerView = recyclerView;
+    }
+
+    void stopInternal() {
+        if (isRunning()) {
+            mRecyclerView.stopScroll();
+        }
     }
 
     @Override
