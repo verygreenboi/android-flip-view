@@ -41,6 +41,8 @@ public class FlipView extends RecyclerView implements OnPositionChangeListener {
     private int mOrientation;
 
     private List<OnPositionChangeListener> mPositionChangeListeners;
+    private Adapter mAdapter;
+    private AdapterDataObserver mDataObserver;
 
     public FlipView(Context context) {
         this(context, null);
@@ -58,6 +60,23 @@ public class FlipView extends RecyclerView implements OnPositionChangeListener {
         super.setLayoutManager(layoutManager);
 
         setItemAnimator(new DefaultItemAnimator());
+
+        mDataObserver = new AdapterDataObserver() {
+            @Override
+            public void onItemRangeRemoved(int positionStart, int itemCount) {
+                super.onItemRangeRemoved(positionStart, itemCount);
+
+                for (int i = positionStart; i < positionStart + itemCount; i++) {
+                    if (getCurrentPosition() == i) {
+                        scrollToPosition(positionStart - 1);
+                        return;
+                    }
+                }
+
+                requestLayout();
+                removeAllViews();
+            }
+        };
     }
 
     public void setOrientation(int orientation) {
@@ -125,6 +144,18 @@ public class FlipView extends RecyclerView implements OnPositionChangeListener {
 
     private FlipLayoutManager getLayoutManagerInternal() {
         return ((FlipLayoutManager) super.getLayoutManager());
+    }
+
+    @Override
+    public void setAdapter(Adapter adapter) {
+        if (mAdapter != null) {
+            mAdapter.unregisterAdapterDataObserver(mDataObserver);
+        }
+
+        mAdapter = adapter;
+        mAdapter.registerAdapterDataObserver(mDataObserver);
+
+        super.setAdapter(adapter);
     }
 
     @Override
