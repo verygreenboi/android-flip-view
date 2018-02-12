@@ -8,6 +8,7 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.support.annotation.Nullable;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.OrientationHelper;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
@@ -17,7 +18,7 @@ import android.view.View;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FlipView extends RecyclerView implements OnPositionChangeListener {
+public class FlipView extends RecyclerView {
     public static final int HORIZONTAL = OrientationHelper.HORIZONTAL;
     public static final int VERTICAL = OrientationHelper.VERTICAL;
     public static final int DISTANCE_PER_POSITION = 180;
@@ -56,7 +57,19 @@ public class FlipView extends RecyclerView implements OnPositionChangeListener {
         super(context, attrs, defStyle);
 
         FlipLayoutManager layoutManager = new FlipLayoutManager();
-        layoutManager.setPositionChangeListener(this);
+        layoutManager.setPositionChangeListener(new net.gregbeaty.flipview.OnPositionChangeListener() {
+            @Override
+            public void onPositionChange(FlipLayoutManager flipLayoutManager, int position) {
+                if (mPositionChangeListeners == null) {
+                    return;
+                }
+
+                for (OnPositionChangeListener listener : mPositionChangeListeners) {
+                    listener.onPositionChange(FlipView.this, position);
+                }
+            }
+        });
+
         super.setLayoutManager(layoutManager);
 
         setItemAnimator(new DefaultItemAnimator());
@@ -73,7 +86,6 @@ public class FlipView extends RecyclerView implements OnPositionChangeListener {
                     }
                 }
 
-                removeAllViews();
                 requestLayout();
             }
         };
@@ -170,14 +182,13 @@ public class FlipView extends RecyclerView implements OnPositionChangeListener {
             return;
         }
 
-        FlipLayoutManager layoutManager = getLayoutManagerInternal();
-        if (layoutManager == null) {
+        final boolean isVerticalScrolling = getLayoutManagerInternal().getOrientation() == FlipView.VERTICAL;
+        final int angle = getLayoutManagerInternal().getAngle();
+        final int currentPosition = getLayoutManagerInternal().getCurrentPosition();
+
+        if (currentPosition == RecyclerView.NO_POSITION) {
             return;
         }
-
-        final boolean isVerticalScrolling = layoutManager.getOrientation() == FlipView.VERTICAL;
-        final int angle = layoutManager.getAngle();
-        final int currentPosition = layoutManager.getCurrentPosition();
 
         View previousView = null;
         View currentView = null;
@@ -205,7 +216,7 @@ public class FlipView extends RecyclerView implements OnPositionChangeListener {
             return;
         }
 
-        if (!layoutManager.isScrolling() && !layoutManager.requiresSettling()) {
+        if (!getLayoutManagerInternal().isScrolling() && !getLayoutManagerInternal().requiresSettling()) {
             drawChild(canvas, currentView, 0);
             return;
         }
@@ -286,17 +297,6 @@ public class FlipView extends RecyclerView implements OnPositionChangeListener {
 
         mCamera.restore();
         canvas.restore();
-    }
-
-    @Override
-    public void onPositionChange(FlipLayoutManager layoutManager, int position) {
-        if (mPositionChangeListeners == null) {
-            return;
-        }
-
-        for (OnPositionChangeListener listener : mPositionChangeListeners) {
-            listener.onPositionChange(this, position);
-        }
     }
 
     @Override

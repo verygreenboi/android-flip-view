@@ -17,6 +17,7 @@ class FlipLayoutManager extends RecyclerView.LayoutManager {
     private int mScrollVector;
     private int mCurrentPosition = RecyclerView.NO_POSITION;
     private int mScrollDistance;
+    private int mPreviousPosition;
     private OnPositionChangeListener mPositionChangeListener;
 
     public void setOrientation(int orientation) {
@@ -109,10 +110,7 @@ class FlipLayoutManager extends RecyclerView.LayoutManager {
         }
 
         mScrollDistance = desiredDistance;
-
-        int oldPosition = mCurrentPosition;
         mCurrentPosition = desiredPosition;
-        notifyOfPositionChange(oldPosition, mCurrentPosition);
 
         fill(recycler, state);
         return modifiedDelta;
@@ -133,36 +131,34 @@ class FlipLayoutManager extends RecyclerView.LayoutManager {
         }
 
         if (state.getItemCount() == 0) {
+            mCurrentPosition = RecyclerView.NO_POSITION;
+            mScrollDistance = 0;
+            removeAndRecycleAllViews(recycler);
+        } else {
+            if (mDecoratedChildWidth == null || mDecoratedChildHeight == null) {
+                View scrap = recycler.getViewForPosition(0);
+                addView(scrap);
+                measureChildWithMargins(scrap, 0, 0);
+                mDecoratedChildWidth = getDecoratedMeasuredWidth(scrap);
+                mDecoratedChildHeight = getDecoratedMeasuredHeight(scrap);
+                detachAndScrapView(scrap, recycler);
+            }
+
             detachAndScrapAttachedViews(recycler);
-            setCurrentPosition(RecyclerView.NO_POSITION, false);
-            return;
+
+            if (mCurrentPosition <= RecyclerView.NO_POSITION) {
+                mCurrentPosition = 0;
+                mScrollDistance = 0;
+            } else if (mCurrentPosition >= state.getItemCount()) {
+                mCurrentPosition = state.getItemCount() - 1;
+                mScrollDistance = FlipView.DISTANCE_PER_POSITION * mCurrentPosition;
+            }
         }
 
-        if (mDecoratedChildWidth == null || mDecoratedChildHeight == null) {
-            View scrap = recycler.getViewForPosition(0);
-            addView(scrap);
-            measureChildWithMargins(scrap, 0, 0);
-            mDecoratedChildWidth = getDecoratedMeasuredWidth(scrap);
-            mDecoratedChildHeight = getDecoratedMeasuredHeight(scrap);
-            detachAndScrapView(scrap, recycler);
-        }
-
-        if (mCurrentPosition <= RecyclerView.NO_POSITION) {
-            setCurrentPosition(0, false);
-        }
-
-        if (mCurrentPosition >= state.getItemCount()) {
-            setCurrentPosition(state.getItemCount() - 1, false);
-            return;
-        }
-
-        detachAndScrapAttachedViews(recycler);
         fill(recycler, state);
     }
 
     private void fill(RecyclerView.Recycler recycler, RecyclerView.State state) {
-        detachAndScrapAttachedViews(recycler);
-
         boolean layoutOnlyCurrentPosition = !isScrolling() && !requiresSettling();
 
         if (!layoutOnlyCurrentPosition) {
@@ -175,11 +171,27 @@ class FlipLayoutManager extends RecyclerView.LayoutManager {
             addView(mCurrentPosition + 1, recycler, state);
         }
 
-        recycler.clear();
+        int previousPosition = mPreviousPosition;
+        mPreviousPosition = mCurrentPosition;
+
+        if (previousPosition != mCurrentPosition && mPositionChangeListener != null) {
+            mPositionChangeListener.onPositionChange(this, mCurrentPosition);
+        }
+
+        for (int i = getChildCount() - 1; i >= 0; i--) {
+            View child = getChildAt(i);
+            int position = getPosition(child);
+
+            if (position == mCurrentPosition - 1 || position == mCurrentPosition || position == mCurrentPosition + 1) {
+                continue;
+            }
+
+            removeAndRecycleView(child, recycler);
+        }
     }
 
     private void addView(int position, RecyclerView.Recycler recycler, RecyclerView.State state) {
-        if (position == RecyclerView.NO_POSITION) {
+        if (position <= RecyclerView.NO_POSITION) {
             return;
         }
 
@@ -217,27 +229,6 @@ class FlipLayoutManager extends RecyclerView.LayoutManager {
         }
 
         return mCurrentPosition;
-    }
-
-    private void setCurrentPosition(int position, boolean requestLayout) {
-        if (position == mCurrentPosition) {
-            return;
-        }
-
-        int oldPosition = mCurrentPosition;
-        mCurrentPosition = position;
-        mScrollDistance = FlipView.DISTANCE_PER_POSITION * position;
-
-        if (mScrollDistance < 0) {
-            mScrollDistance = 0;
-        }
-
-        if (requestLayout) {
-            removeAllViews();
-            requestLayout();
-        }
-
-        notifyOfPositionChange(oldPosition, mCurrentPosition);
     }
 
     public int getScrollDistance() {
@@ -291,7 +282,16 @@ class FlipLayoutManager extends RecyclerView.LayoutManager {
 
     @Override
     public void scrollToPosition(int position) {
-        setCurrentPosition(position, true);
+        if (position < RecyclerView.NO_POSITION || position > getItemCount() - 1) {
+            throw new UnsupportedOperationException("Position " + position + " is not valid.");
+        }
+
+        mCurrentPosition = position;
+        mScrollDistance = position == RecyclerView.NO_POSITION
+                ? 0
+                : FlipView.DISTANCE_PER_POSITION * position;
+
+        requestLayout();
     }
 
     void setPositionChangeListener(OnPositionChangeListener onPositionChangeListener) {
@@ -308,12 +308,6 @@ class FlipLayoutManager extends RecyclerView.LayoutManager {
 
     public boolean requiresSettling() {
         return getScrollDistance() % FlipView.DISTANCE_PER_POSITION != 0;
-    }
-
-    private void notifyOfPositionChange(int oldPosition, int newPosition) {
-        if (oldPosition != newPosition && mPositionChangeListener != null) {
-            mPositionChangeListener.onPositionChange(this, newPosition);
-        }
     }
 
     public int getOrientation() {
