@@ -73,8 +73,8 @@ public class FlipView extends RecyclerView implements OnPositionChangeListener {
                     }
                 }
 
-                requestLayout();
                 removeAllViews();
+                requestLayout();
             }
         };
     }
